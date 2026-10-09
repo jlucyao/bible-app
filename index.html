@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1224">
+<title>Bible Puzzle</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#0f1224;--panel:#181c36;--panel2:#20254a;--line:#2b3160;--fg:#eceefb;--muted:#9a9fc4;--off:#2d3262;
+  --z0:#f2bd45;--z1:#ef8a5f;--z2:#a58cf0;--z3:#3cc4b4;
+  --accent:#f2bd45;--accent-fg:#14122b;--danger:#ff8a8a;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#f2f4fb;--panel:#ffffff;--panel2:#e9ecf8;--line:#d9ddf0;--fg:#171a3a;--muted:#5d6390;--off:#d7dbee;
+  --z0:#d9960b;--z1:#d4602f;--z2:#7a5bd1;--z3:#14907f;--accent:#171a3a;--accent-fg:#ffffff;--danger:#c0392b;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme]){
+    --bg:#f2f4fb;--panel:#ffffff;--panel2:#e9ecf8;--line:#d9ddf0;--fg:#171a3a;--muted:#5d6390;--off:#d7dbee;
+    --z0:#d9960b;--z1:#d4602f;--z2:#7a5bd1;--z3:#14907f;--accent:#171a3a;--accent-fg:#ffffff;--danger:#c0392b;
+    color-scheme:light;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 var(--sans);min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0;line-height:1.15}
+p{margin:0}
+.muted{color:var(--muted)}
+
+/* Shell */
+.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);
+  padding:calc(10px + env(safe-area-inset-top,0px)) 18px 10px;display:flex;align-items:center;justify-content:space-between}
+.top .logo{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:.2px}
+.streak{display:flex;align-items:center;gap:6px;font-weight:600;font-size:15px;background:var(--panel);border:1px solid var(--line);padding:6px 12px;border-radius:99px}
+main{max-width:720px;margin:0 auto;padding:6px 16px calc(96px + env(safe-area-inset-bottom,0px))}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(4,1fr);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+.tab{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-size:12px;color:var(--muted);border-radius:12px}
+.tab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-current="page"]{color:var(--fg);font-weight:600}
+.tab[aria-current="page"] svg{stroke:var(--accent)}
+
+/* Buttons */
+.btn{border:0;border-radius:14px;padding:12px 18px;font-weight:600;font-size:15px;background:var(--panel2);color:var(--fg)}
+.btn.primary{background:var(--accent);color:var(--accent-fg)}
+.btn.ghost{background:transparent;color:var(--muted);padding:12px 10px}
+.btn.danger{background:transparent;border:1px solid var(--danger);color:var(--danger)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn:active:not(:disabled){transform:scale(.97)}
+
+/* Home */
+.hero{padding:14px 2px 18px}
+.hero h1{font-size:26px;margin-bottom:12px}
+.stack{display:flex;height:10px;border-radius:6px;overflow:hidden;background:var(--off);gap:2px}
+.stack i{display:block;height:100%;transition:width .5s}
+.zc{display:flex;gap:16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:16px;margin-bottom:12px}
+.zc-spiral{flex:0 0 96px;width:96px;height:96px}
+.zc-body{flex:1;min-width:0}
+.zc-zone{font-size:13px;color:var(--zc);font-weight:600}
+.zc h3{font-size:22px;margin:2px 0 2px}
+.zc-prog{font-size:14px;color:var(--muted);margin-bottom:10px}
+.zc-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.zc .btn.primary{background:var(--zc);color:#14122b}
+:root[data-theme="light"] .zc .btn.primary{color:#fff}
+@media (prefers-color-scheme:light){:root:not([data-theme]) .zc .btn.primary{color:#fff}}
+.note{background:var(--panel);border:1px dashed var(--line);border-radius:16px;padding:12px 14px;margin:0 0 12px;display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:14px}
+.note .btn{padding:8px 12px;font-size:14px}
+
+/* Dots */
+.dot{fill:var(--off)}
+.dot.on{fill:var(--zc)}
+.pop{animation:pop .55s ease-out both;transform-box:fill-box;transform-origin:center}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(3)}100%{transform:scale(1)}}
+
+/* Fresque */
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin:8px 2px 10px}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;display:block}
+.fres{background:var(--panel);border:1px solid var(--line);border-radius:22px;overflow-x:auto;padding:6px}
+.fres svg{display:block;min-width:760px;width:100%;height:auto}
+.fl{font-size:10px;fill:var(--muted);text-anchor:middle;cursor:pointer;user-select:none}
+.fl.done,.fl.sel{fill:var(--fg);font-weight:700}
+#ring{fill:none;stroke:var(--fg);stroke-width:1;stroke-dasharray:3 4;opacity:.7}
+.selbox{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-top:12px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.selbox h3{font-size:20px}
+
+/* Stats */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:8px 0 14px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+.stat b{display:block;font-family:var(--serif);font-size:28px;line-height:1.1}
+.stat span{font-size:13px;color:var(--muted)}
+.sec{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:16px;margin-bottom:12px}
+.sec h2{font-size:18px;margin-bottom:12px}
+.zr{display:flex;justify-content:space-between;font-size:14px;margin-top:8px}
+.bar{height:8px;border-radius:6px;background:var(--off);overflow:hidden;margin:4px 0 4px}
+.bar i{display:block;height:100%}
+.days{display:flex;align-items:flex-end;gap:5px;height:80px}
+.days b{flex:1;background:var(--off);border-radius:4px 4px 0 0;min-height:3px}
+.days b.t{background:var(--accent)}
+.dl{display:flex;gap:5px;margin-top:4px}
+.dl span{flex:1;text-align:center;font-size:11px;color:var(--muted)}
+.hist{list-style:none;margin:0;padding:0}
+.hist li{padding:10px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.hist li:first-child{border-top:0;padding-top:0}
+.hist .n{white-space:nowrap;font-weight:600}
+.curve{width:100%;height:auto;display:block}
+
+/* Settings */
+.set{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.set:first-of-type{border-top:0}
+.seg{display:flex;background:var(--panel2);border-radius:12px;padding:3px}
+.seg button{border:0;background:none;padding:7px 12px;border-radius:9px;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--fg);font-weight:600}
+.switch{width:48px;height:28px;border-radius:99px;border:0;background:var(--off);position:relative;flex:0 0 auto}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--fg);transition:transform .2s}
+.switch[aria-checked="true"]{background:var(--accent)}
+.switch[aria-checked="true"]::after{transform:translateX(20px);background:var(--accent-fg)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Sheet */
+#overlay{position:fixed;inset:0;z-index:20;background:rgba(5,6,18,.6);display:flex;align-items:flex-end;justify-content:center}
+#overlay[hidden]{display:none}
+.sheet{width:100%;max-width:560px;background:var(--panel);border-radius:26px 26px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));
+  max-height:88vh;overflow:auto;animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+.sheet h2{font-size:24px}
+.sheet .sub{color:var(--muted);margin:4px 0 16px}
+.stepper{display:flex;align-items:center;justify-content:center;gap:14px;margin:10px 0 6px}
+.stepper button{width:52px;height:52px;border-radius:50%;border:0;background:var(--panel2);font-size:26px;line-height:1}
+.stepper input{width:90px;text-align:center;font:600 34px var(--serif);background:transparent;color:var(--fg);border:0;border-bottom:2px solid var(--line);padding:4px}
+.stepper input:focus{outline:none;border-color:var(--accent)}
+.range{text-align:center;color:var(--muted);margin-bottom:18px;min-height:22px}
+.row{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.row .btn{flex:1}
+.confirm{font-family:var(--serif);font-size:22px;text-align:center;margin:18px 0 22px;line-height:1.3}
+.pl{list-style:none;margin:0;padding:0}
+.pl li button{width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:12px 2px;display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center}
+.pl li:first-child button{border-top:0}
+.pl li button:disabled{opacity:.45;cursor:default}
+.pl .nm{font-weight:600}
+.pl .pc{font-size:13px;color:var(--muted)}
+.pl .bar{grid-column:1/-1;margin:2px 0 0}
+
+/* Toast */
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:15;background:var(--fg);color:var(--bg);
+  padding:10px 14px;border-radius:14px;display:flex;gap:14px;align-items:center;font-size:14px;max-width:calc(100% - 32px)}
+#toast[hidden]{display:none}
+#toast button{background:none;border:0;color:inherit;font-weight:700;text-decoration:underline;padding:0}
+
+/* Celebration */
+#celebrate{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center}
+#celebrate[hidden]{display:none}
+#celebrate svg{width:min(70vw,320px);height:min(70vw,320px)}
+#celebrate .dot{animation:light .35s forwards;animation-delay:calc(var(--i) * var(--d))}
+@keyframes light{0%{fill:var(--off);transform:scale(1)}60%{transform:scale(2.2)}100%{fill:var(--zc);transform:scale(1)}}
+#celebrate .dot{transform-box:fill-box;transform-origin:center}
+#celebrate h2{font-size:30px;margin-top:6px}
+#celebrate .after{opacity:0;animation:fade .6s forwards;animation-delay:var(--end)}
+@keyframes fade{to{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-delay:0s!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">Bible Puzzle</div>
+  <div class="streak" id="streak" aria-live="polite"></div>
+</header>
+<main id="view"></main>
+<nav class="tabs" aria-label="Navigation principale" id="tabs"></nav>
+<div id="overlay" hidden><div class="sheet" role="dialog" aria-modal="true" id="sheet"></div></div>
+<div id="toast" hidden role="status"></div>
+<div id="celebrate" hidden role="dialog" aria-modal="true" aria-label="Livre terminé"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- Plan (source: bible_puzzle_plan.json) ---------- */
+const ZONES = [
+  {id:'psaumes_sagesse', name:'Psaumes et Sagesse', anchor:[230,200], books:[
+    ['psaumes','Psaumes',150],['proverbes','Proverbes',31],['ecclesiaste','Ecclésiaste',12],['cantique','Cantique des Cantiques',8,'Cantique']]},
+  {id:'pentateuque_histoire', name:"Pentateuque et Histoire d'Israël", anchor:[690,230], books:[
+    ['genese','Genèse',50],['exode','Exode',40],['levitique','Lévitique',27],['nombres','Nombres',36],['deuteronome','Deutéronome',34],
+    ['josue','Josué',24],['juges','Juges',21],['ruth','Ruth',4],['1samuel','1 Samuel',31],['2samuel','2 Samuel',24],
+    ['1rois','1 Rois',22],['2rois','2 Rois',25],['job','Job',42]]},
+  {id:'chroniques_prophetes', name:'Chroniques et Prophètes', anchor:[290,570], books:[
+    ['1chroniques','1 Chroniques',29],['2chroniques','2 Chroniques',36],['esdras','Esdras',10],['nehemie','Néhémie',13],['esther','Esther',10],
+    ['esaie','Ésaïe',66],['abdias','Abdias',1],['joel','Joël',3],['jonas','Jonas',4],['osee','Osée',14],['amos','Amos',9],['michee','Michée',7],
+    ['nahum','Nahum',3],['sophonie','Sophonie',3],['jeremie','Jérémie',52],['lamentations','Lamentations',5],['habacuc','Habacuc',3],
+    ['daniel','Daniel',12],['ezechiel','Ézéchiel',48],['aggee','Aggée',2],['zacharie','Zacharie',14],['malachie','Malachie',4]]},
+  {id:'evangiles_epitres', name:'Évangiles et Épîtres', anchor:[740,590], books:[
+    ['marc','Marc',16],['matthieu','Matthieu',28],['luc','Luc',24],['jean','Jean',21],['actes','Actes',28],['romains','Romains',16],
+    ['1corinthiens','1 Corinthiens',16],['2corinthiens','2 Corinthiens',13],['galates','Galates',6],['ephesiens','Éphésiens',6],
+    ['philippiens','Philippiens',4],['colossiens','Colossiens',4],['1thessaloniciens','1 Thessaloniciens',5,'1 Thess.'],
+    ['2thessaloniciens','2 Thessaloniciens',3,'2 Thess.'],['1timothee','1 Timothée',6],['2timothee','2 Timothée',4],['tite','Tite',3],
+    ['philemon','Philémon',1],['hebreux','Hébreux',13],['jacques','Jacques',5],['1pierre','1 Pierre',5],['2pierre','2 Pierre',3],
+    ['1jean','1 Jean',5],['2jean','2 Jean',1],['3jean','3 Jean',1],['jude','Jude',1],['apocalypse','Apocalypse',22]]}
+];
+const BOOKS = [];
+ZONES.forEach((z, zi) => {
+  z.books = z.books.map(([id, name, ch, short]) => { const b = {id, name, ch, zi, short: short || name}; BOOKS.push(b); return b; });
+  z.total = z.books.reduce((s, b) => s + b.ch, 0);
+});
+const BY = Object.fromEntries(BOOKS.map(b => [b.id, b]));
+const TOTAL = BOOKS.reduce((s, b) => s + b.ch, 0);
+
+/* ---------- Dates (always local time) ---------- */
+const pad = n => String(n).padStart(2, '0');
+const dstr = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const today = () => dstr(new Date());
+const pd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const diff = (a, b) => Math.round((pd(a) - pd(b)) / 864e5);
+const addD = (s, n) => { const d = pd(s); d.setDate(d.getDate() + n); return dstr(d); };
+
+/* ---------- Storage (swap this layer for a backend later) ---------- */
+const KEY = 'biblepuzzle.v1';
+const defaults = () => ({version: 1, reading_log: [], current: {}, completed: {}, last: null, settings: {grace: true, theme: 'auto'}});
+let S = load();
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (s && Array.isArray(s.reading_log)) { const d = defaults(); return Object.assign(d, s, {settings: Object.assign(d.settings, s.settings)}); }
+  } catch (e) {}
+  return defaults();
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) { toast("La sauvegarde a échoué. Exporte ta progression depuis les réglages."); }
+}
+
+/* ---------- Derived state ---------- */
+let D = {};
+function derive() {
+  const read = {}, byDay = {}, zoneRead = [0, 0, 0, 0];
+  BOOKS.forEach(b => read[b.id] = 0);
+  S.reading_log.forEach(e => {
+    const b = BY[e.book_id]; if (!b) return;
+    read[b.id]++; zoneRead[b.zi]++;
+    (byDay[e.tz_date] || (byDay[e.tz_date] = [])).push(e);
+  });
+  const days = Object.keys(byDay).sort();
+  const gap = S.settings.grace ? 2 : 1;
+  let best = 0, run = 0, prev = null;
+  days.forEach(d => { run = (prev && diff(d, prev) <= gap) ? run + 1 : 1; best = Math.max(best, run); prev = d; });
+  const cur = days.length && diff(today(), days[days.length - 1]) <= gap ? run : 0;
+  const total = zoneRead.reduce((a, b) => a + b, 0);
+  D = {read, byDay, zoneRead, total, days, streak: cur, best, booksDone: BOOKS.filter(b => read[b.id] === b.ch).length};
+}
+const todayCount = () => (D.byDay[today()] || []).length;
+function nextOpen(zi, afterId) {
+  const bs = ZONES[zi].books, i = bs.findIndex(b => b.id === afterId);
+  const order = bs.slice(i + 1).concat(bs.slice(0, i + 1));
+  const n = order.find(b => D.read[b.id] < b.ch);
+  return n ? n.id : null;
+}
+function curBook(zi) {
+  const c = S.current[zi];
+  if (c && BY[c] && D.read[c] < BY[c].ch) return BY[c];
+  return ZONES[zi].books.find(b => D.read[b.id] < b.ch) || null;
+}
+const rng = (r, n) => n === 1 ? `ch. ${r + 1}` : `ch. ${r + 1} à ${r + n}`;
+const plural = (n, a, b) => n > 1 ? b : a;
+
+/* ---------- Actions ---------- */
+function place(id, n) {
+  const b = BY[id], r = D.read[id];
+  n = Math.min(n, b.ch - r); if (n < 1) return false;
+  const sid = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const now = new Date().toISOString(), td = today();
+  for (let k = 1; k <= n; k++) S.reading_log.push({id: sid + '-' + k, book_id: id, chapter: r + k, read_at: now, tz_date: td, session: sid});
+  derive();
+  const done = D.read[id] === b.ch;
+  S.last = {session: sid, book_id: id, from: r + 1, to: r + n, prevCurrent: S.current[b.zi] ?? null, completed: done};
+  if (done) S.completed[id] = now;
+  const nx = done ? nextOpen(b.zi, id) : id;
+  if (nx) S.current[b.zi] = nx; else delete S.current[b.zi];
+  pop = {id, from: r, n};
+  save();
+  if (navigator.vibrate) try { navigator.vibrate(15); } catch (e) {}
+  return done;
+}
+function undo() {
+  const l = S.last; if (!l) return;
+  S.reading_log = S.reading_log.filter(e => e.session !== l.session);
+  if (l.completed) delete S.completed[l.book_id];
+  const zi = BY[l.book_id].zi;
+  if (l.prevCurrent) S.current[zi] = l.prevCurrent; else delete S.current[zi];
+  S.last = null; pop = null;
+  derive(); save(); render();
+  toast('Dernière pose annulée.');
+}
+
+/* ---------- Dot spirals ---------- */
+let pop = null;
+function dotGeom(ch) { const dr = ch <= 8 ? 5 : ch <= 30 ? 3.6 : 2.8; const C = dr * 2.15; return {dr, C, R: C * Math.sqrt(ch) + dr + 2}; }
+function spiral(b, read, cls, opts = {}) {
+  const {dr, C, R} = dotGeom(b.ch);
+  let h = `<svg class="${cls}" viewBox="${-R} ${-R} ${2 * R} ${2 * R}" role="img" aria-label="${b.name}, ${read} sur ${b.ch} chapitres lus" style="--zc:var(--z${b.zi})">`;
+  for (let k = 0; k < b.ch; k++) {
+    const a = k * 2.39996, r = C * Math.sqrt(k + .5);
+    const on = opts.allOn || k < read;
+    let extra = '';
+    if (opts.pop && pop && pop.id === b.id && k >= pop.from && k < pop.from + pop.n) extra = ` pop" style="animation-delay:${(k - pop.from) * 90}ms`;
+    if (opts.anim) extra = `" style="--i:${k}`;
+    h += `<circle class="dot${on ? ' on' : ''}${extra}" cx="${(r * Math.cos(a)).toFixed(1)}" cy="${(r * Math.sin(a)).toFixed(1)}" r="${dr}"/>`;
+  }
+  return h + '</svg>';
+}
+
+/* ---------- Views ---------- */
+let view = 'home', sel = null;
+const $ = s => document.querySelector(s);
+const ICONS = {
+  home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/>',
+  fresque: '<circle cx="8" cy="8" r="2"/><circle cx="16" cy="9" r="2"/><circle cx="9" cy="16" r="2"/><circle cx="17" cy="16" r="2"/>',
+  stats: '<path d="M5 20V10"/><path d="M12 20V4"/><path d="M19 20v-7"/>',
+  reglages: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>'
+};
+const TABS = [['home', 'Accueil'], ['fresque', 'Fresque'], ['stats', 'Stats'], ['reglages', 'Réglages']];
+
+function render() {
+  $('#tabs').innerHTML = TABS.map(([k, l]) =>
+    `<button class="tab" data-tab="${k}" ${view === k ? 'aria-current="page"' : ''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg>${l}</button>`).join('');
+  $('#streak').innerHTML = D.streak > 0 ? `<span aria-hidden="true">🔥</span> ${D.streak} ${plural(D.streak, 'jour', 'jours')}` : '';
+  $('#streak').style.display = D.streak > 0 ? '' : 'none';
+  $('#view').innerHTML = {home: homeView, fresque: fresqueView, stats: statsView, reglages: settingsView}[view]();
+  if (view === 'fresque') layoutRing();
+  pop = null;
+}
+
+function homeView() {
+  const left = TOTAL - D.total;
+  let msg;
+  if (D.total === 0) msg = 'Lis un chapitre, puis pose ta première pièce.';
+  else if (todayCount() > 0) msg = `Belle séance : ${todayCount()} ${plural(todayCount(), 'pièce posée', 'pièces posées')} aujourd'hui.`;
+  else if (D.streak > 0) msg = 'Un seul chapitre suffit pour continuer ta série.';
+  else msg = 'Reprends quand tu veux, ta fresque t\'attend.';
+  const stack = ZONES.map((z, zi) => `<i style="width:${D.zoneRead[zi] / TOTAL * 100}%;background:var(--z${zi})"></i>`).join('');
+  const undoNote = S.last ? `<div class="note"><span>Dernière pose : ${BY[S.last.book_id].name} ${rng(S.last.from - 1, S.last.to - S.last.from + 1)}</span><button class="btn" data-undo>Annuler</button></div>` : '';
+  return `<section class="hero"><h1>${msg}</h1>
+    <div class="stack" role="img" aria-label="${D.total} pièces posées sur ${TOTAL}">${stack}</div>
+    <p class="muted" style="margin-top:8px;font-size:14px">${D.total} ${plural(D.total, 'pièce posée', 'pièces posées')}, ${left} à venir</p></section>
+    ${undoNote}${ZONES.map((z, zi) => zoneCard(zi)).join('')}`;
+}
+function zoneCard(zi) {
+  const z = ZONES[zi], b = curBook(zi);
+  if (!b) return `<article class="zc" style="--zc:var(--z${zi})"><div class="zc-body"><p class="zc-zone">${z.name}</p><h3>Zone terminée</h3><p class="zc-prog">Tous les livres de cette zone sont posés.</p></div></article>`;
+  const r = D.read[b.id];
+  return `<article class="zc" style="--zc:var(--z${zi})">${spiral(b, r, 'zc-spiral', {pop: true})}
+    <div class="zc-body"><p class="zc-zone">${z.name}</p><h3>${b.name}</h3>
+    <p class="zc-prog">${r === 0 ? `${b.ch} ${plural(b.ch, 'chapitre', 'chapitres')}, pas encore commencé` : `${r} sur ${b.ch} chapitres lus`}</p>
+    <div class="zc-actions"><button class="btn primary" data-place="${b.id}">Poser le chapitre ${r + 1}</button>
+    <button class="btn ghost" data-pick="${zi}">Changer de livre</button></div></div></article>`;
+}
+
+/* Fresque layout (force simulation, fixed seed so it is stable) */
+let FL = null;
+function fresqueLayout() {
+  if (FL) return FL;
+  const W = 1000, H = 800, C = 6, R = 2.8;
+  let rs = 7; const rnd = () => (rs = rs * 16807 % 2147483647) / 2147483647;
+  const B = BOOKS.map(b => ({b, r: C * Math.sqrt(b.ch) + R + (b.ch < 4 ? 3 : 0),
+    x: ZONES[b.zi].anchor[0] + (rnd() - .5) * 180, y: ZONES[b.zi].anchor[1] + (rnd() - .5) * 180}));
+  for (let it = 0; it < 600; it++) {
+    B.forEach(o => { const a = ZONES[o.b.zi].anchor; o.x += (a[0] - o.x) * .012; o.y += (a[1] - o.y) * .012; });
+    for (let i = 0; i < B.length; i++) for (let j = i + 1; j < B.length; j++) {
+      const p = B[i], q = B[j]; const dx = q.x - p.x, dy = q.y - p.y, d = Math.hypot(dx, dy) || .01, m = p.r + q.r + 22;
+      if (d < m) { const f = (m - d) / 2 / d; p.x -= dx * f; p.y -= dy * f; q.x += dx * f; q.y += dy * f; }
+    }
+    B.forEach(o => { o.x = Math.max(o.r + 8, Math.min(W - o.r - 8, o.x)); o.y = Math.max(o.r + 8, Math.min(H - o.r - 22, o.y)); });
+  }
+  FL = {W, H, C, R, B};
+  return FL;
+}
+function fresqueView() {
+  const {W, H, C, R, B} = fresqueLayout();
+  let h = `<div class="legend">${ZONES.map((z, zi) => `<span><i style="background:var(--z${zi})"></i>${z.name}</span>`).join('')}</div>
+    <div class="fres"><svg id="fsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Fresque de la Bible, un point par chapitre">`;
+  h += '<circle id="ring" r="0"/>';
+  B.forEach(o => {
+    const b = o.b, r = D.read[b.id], zc = `var(--z${b.zi})`;
+    for (let k = 0; k < b.ch; k++) {
+      const a = k * 2.39996, rr = C * Math.sqrt(k + .5);
+      const popped = pop && pop.id === b.id && k >= pop.from && k < pop.from + pop.n;
+      h += `<circle class="dot${k < r ? ' on' : ''}${popped ? ' pop' : ''}" data-b="${b.id}" style="--zc:${zc}${popped ? `;animation-delay:${(k - pop.from) * 90}ms` : ''}" cx="${(o.x + rr * Math.cos(a)).toFixed(1)}" cy="${(o.y + rr * Math.sin(a)).toFixed(1)}" r="${R}"/>`;
+    }
+    h += `<text class="fl${r === b.ch ? ' done' : ''}${sel === b.id ? ' sel' : ''}" data-b="${b.id}" x="${o.x.toFixed(1)}" y="${(o.y + o.r + 11).toFixed(1)}">${b.short}</text>`;
+  });
+  h += '</svg></div>';
+  if (sel) {
+    const b = BY[sel], r = D.read[sel];
+    h += `<div class="selbox"><div><h3>${b.name}</h3><p class="muted" style="font-size:14px">${r === b.ch ? 'Livre terminé' : `${r} sur ${b.ch} chapitres lus, prochain : chapitre ${r + 1}`}</p></div>
+      ${r < b.ch ? `<button class="btn primary" data-place="${b.id}">Poser des pièces</button>` : ''}</div>`;
+  } else h += '<p class="muted" style="margin:12px 4px;font-size:14px">Touche un livre pour le sélectionner.</p>';
+  return h;
+}
+function layoutRing() {
+  const ring = $('#ring'); if (!ring || !sel) return;
+  const o = FL.B.find(x => x.b.id === sel); if (!o) return;
+  ring.setAttribute('cx', o.x); ring.setAttribute('cy', o.y); ring.setAttribute('r', o.r + 6);
+}
+
+/* Stats */
+function weekStart(s) { const d = pd(s); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return dstr(d); }
+function condense(entries) {
+  const by = {};
+  entries.forEach(e => (by[e.book_id] || (by[e.book_id] = [])).push(e.chapter));
+  return Object.entries(by).map(([id, chs]) => {
+    chs.sort((a, b) => a - b);
+    const parts = []; let s = chs[0], p = chs[0];
+    for (let i = 1; i <= chs.length; i++) {
+      if (chs[i] === p + 1) { p = chs[i]; continue; }
+      parts.push(s === p ? `${s}` : `${s} à ${p}`); s = chs[i]; p = chs[i];
+    }
+    return `${BY[id].name} ${parts.join(', ')}`;
+  }).join(' · ');
+}
+function dayLabel(d) {
+  const t = today();
+  if (d === t) return "Aujourd'hui"; if (d === addD(t, -1)) return 'Hier';
+  return pd(d).toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'});
+}
+function curve() {
+  if (!D.days.length) return '';
+  const first = weekStart(D.days[0]), last = weekStart(today());
+  const weeks = []; for (let w = first; w <= last; w = addD(w, 7)) weeks.push(w);
+  if (weeks.length < 2) return '<p class="muted" style="font-size:14px">La courbe apparaît dès ta deuxième semaine de lecture.</p>';
+  const cnt = ZONES.map(() => weeks.map(() => 0));
+  S.reading_log.forEach(e => { const b = BY[e.book_id]; if (!b) return; const i = weeks.indexOf(weekStart(e.tz_date)); if (i >= 0) cnt[b.zi][i]++; });
+  const cum = cnt.map(a => { let s = 0; return a.map(v => s += v); });
+  const mx = Math.max(1, ...cum.map(a => a[a.length - 1]));
+  const W = 320, H = 130;
+  const lines = cum.map((a, zi) => `<polyline fill="none" stroke="var(--z${zi})" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${a.map((v, i) => `${(i / (a.length - 1) * W).toFixed(1)},${(H - v / mx * H).toFixed(1)}`).join(' ')}"/>`).join('');
+  return `<svg class="curve" viewBox="-4 -6 ${W + 8} ${H + 12}" role="img" aria-label="Pièces posées au fil des semaines, par zone">${lines}</svg>
+    <div class="legend" style="margin-top:8px">${ZONES.map((z, zi) => `<span><i style="background:var(--z${zi})"></i>${z.name}</span>`).join('')}</div>`;
+}
+function statsView() {
+  const left = TOTAL - D.total;
+  const t = today(), arr = []; for (let i = 13; i >= 0; i--) arr.push(addD(t, -i));
+  const vals = arr.map(d => (D.byDay[d] || []).length), mx = Math.max(...vals, 1);
+  const avg = D.days.length ? (D.total / D.days.length).toFixed(1).replace('.', ',') : '0';
+  const hist = D.days.slice(-7).reverse().map(d => `<li><div><div style="font-weight:600">${dayLabel(d)}</div><div class="muted">${condense(D.byDay[d])}</div></div><div class="n">${D.byDay[d].length}</div></li>`).join('');
+  return `<div class="grid">
+    <div class="stat"><b>${left}</b><span>pièces restantes</span></div>
+    <div class="stat"><b>${(D.total / TOTAL * 100).toFixed(1).replace('.', ',')} %</b><span>de la Bible lue</span></div>
+    <div class="stat"><b>${D.streak}</b><span>jours d'affilée, record ${D.best}</span></div>
+    <div class="stat"><b>${D.booksDone}</b><span>livres terminés sur ${BOOKS.length}</span></div>
+    <div class="stat"><b>${todayCount()}</b><span>pièces aujourd'hui</span></div>
+    <div class="stat"><b>${avg}</b><span>pièces par jour de lecture</span></div></div>
+    <section class="sec"><h2>Progression par zone</h2>${ZONES.map((z, zi) => `<div class="zr"><span>${z.name}</span><span>${D.zoneRead[zi]} sur ${z.total}</span></div><div class="bar"><i style="width:${D.zoneRead[zi] / z.total * 100}%;background:var(--z${zi})"></i></div>`).join('')}</section>
+    <section class="sec"><h2>14 derniers jours</h2><div class="days">${vals.map((v, i) => `<b class="${i === 13 ? 't' : ''}" style="height:${v / mx * 100}%" title="${v}"></b>`).join('')}</div>
+      <div class="dl">${arr.map(d => `<span>${'DLMMJVS'[pd(d).getDay()]}</span>`).join('')}</div></section>
+    <section class="sec"><h2>Courbe par zone</h2>${curve() || '<p class="muted" style="font-size:14px">Pose ta première pièce pour voir ta courbe.</p>'}</section>
+    <section class="sec"><h2>Derniers jours de lecture</h2>${hist ? `<ul class="hist">${hist}</ul>` : '<p class="muted" style="font-size:14px">Rien pour l\'instant. Ton premier chapitre apparaîtra ici.</p>'}</section>`;
+}
+
+/* Settings */
+function settingsView() {
+  const th = S.settings.theme;
+  return `<section class="sec"><h2>Affichage</h2>
+    <div class="set"><span>Thème</span><div class="seg" role="group" aria-label="Thème">${[['auto', 'Auto'], ['light', 'Clair'], ['dark', 'Sombre']].map(([k, l]) => `<button data-theme="${k}" aria-pressed="${th === k}">${l}</button>`).join('')}</div></div>
+    <div class="set"><span>Jour de grâce<br><small class="muted">Un jour sans lecture ne casse pas ta série.</small></span><button class="switch" role="switch" data-grace aria-checked="${S.settings.grace}" aria-label="Jour de grâce"></button></div></section>
+    <section class="sec"><h2>Mes données</h2>
+    <p class="muted" style="font-size:14px;margin-bottom:12px">Tout reste sur cet appareil. Exporte une sauvegarde de temps en temps, ou pour changer d'appareil.</p>
+    <div class="actions"><button class="btn primary" data-export>Exporter ma progression</button>
+    <button class="btn" data-import>Importer une sauvegarde</button>
+    <button class="btn danger" data-reset>Tout effacer</button></div>
+    <input type="file" id="file" accept="application/json,.json" hidden></section>`;
+}
+function exportData() {
+  const user_book = BOOKS.filter(b => D.read[b.id] > 0).map(b => ({book_id: b.id, chapters_read: D.read[b.id], completed_at: S.completed[b.id] || null}));
+  const out = {app: 'bible-puzzle', version: 1, exported_at: new Date().toISOString(), data: S, user_book};
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], {type: 'application/json'}));
+  a.download = `bible-puzzle-${today()}.json`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  toast('Sauvegarde exportée.');
+}
+function importData(text) {
+  let o; try { o = JSON.parse(text); } catch (e) { return toast('Fichier illisible.'); }
+  const d = o && o.data ? o.data : o;
+  if (!d || !Array.isArray(d.reading_log)) return toast("Ce fichier n'est pas une sauvegarde Bible Puzzle.");
+  const seen = new Set(), log = [];
+  d.reading_log.forEach(e => {
+    const b = e && BY[e.book_id], c = e && (e.chapter | 0); if (!b || c < 1 || c > b.ch) return;
+    const k = b.id + ':' + c; if (seen.has(k)) return; seen.add(k);
+    const rd = e.read_at || new Date().toISOString();
+    log.push({id: String(e.id || k), book_id: b.id, chapter: c, read_at: rd, tz_date: /^\d{4}-\d\d-\d\d$/.test(e.tz_date) ? e.tz_date : rd.slice(0, 10), session: e.session || 'imp'});
+  });
+  if (!confirm(`Remplacer ta progression actuelle par cette sauvegarde (${log.length} pièces) ?`)) return;
+  const next = defaults(); next.reading_log = log; next.settings = Object.assign(next.settings, d.settings || {});
+  S = next; derive();
+  BOOKS.forEach(b => { if (D.read[b.id] === b.ch) S.completed[b.id] = (d.completed && d.completed[b.id]) || new Date().toISOString(); });
+  ZONES.forEach((z, zi) => { const c = d.current && d.current[zi]; if (c && BY[c] && BY[c].zi === zi) S.current[zi] = c; });
+  save(); applyTheme(); derive(); render(); toast('Sauvegarde importée.');
+}
+function applyTheme() {
+  const t = S.settings.theme;
+  if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+}
+
+/* ---------- Sheets ---------- */
+function openSheet(html) { $('#sheet').innerHTML = html; $('#overlay').hidden = false; const f = $('#sheet').querySelector('input,button'); if (f) f.focus({preventScroll: true}); }
+function closeSheet() { $('#overlay').hidden = true; $('#sheet').innerHTML = ''; }
+
+function openPlace(id) {
+  const b = BY[id], r = D.read[id], max = b.ch - r; if (max < 1) return;
+  let n = 1;
+  const step0 = () => {
+    openSheet(`<h2>${b.name}</h2><p class="sub">${r} sur ${b.ch} lus. Prochain chapitre : ${r + 1}.</p>
+      <div class="stepper"><button id="mn" aria-label="Moins un chapitre">−</button>
+      <input id="num" type="number" inputmode="numeric" min="1" max="${max}" value="${n}" aria-label="Nombre de chapitres lus"><button id="pl" aria-label="Plus un chapitre">+</button></div>
+      <p class="range" id="range"></p>
+      <div class="row"><button class="btn" id="all">Jusqu'à la fin</button><button class="btn primary" id="go"></button></div>
+      <div class="row" style="margin-top:8px"><button class="btn ghost" id="cancel">Fermer</button></div>`);
+    const upd = () => {
+      n = Math.min(Math.max(n || 1, 1), max);
+      $('#range').textContent = `${b.name} ${rng(r, n)}`;
+      $('#go').textContent = `Poser ${n} ${plural(n, 'pièce', 'pièces')}`;
+      $('#mn').disabled = n <= 1; $('#pl').disabled = n >= max;
+    };
+    upd();
+    $('#mn').onclick = () => { n--; $('#num').value = n; upd(); };
+    $('#pl').onclick = () => { n++; $('#num').value = n; upd(); };
+    $('#num').oninput = e => { const v = parseInt(e.target.value, 10); n = isNaN(v) ? 1 : Math.min(Math.max(v, 1), max); upd(); };
+    $('#num').onchange = e => { e.target.value = n; };
+    $('#all').onclick = () => { n = max; $('#num').value = n; upd(); };
+    $('#cancel').onclick = closeSheet;
+    $('#go').onclick = step1;
+  };
+  const step1 = () => {
+    openSheet(`<p class="confirm">Confirmer : ${b.name} ${rng(r, n)} (${n} ${plural(n, 'pièce', 'pièces')}) ?</p>
+      <div class="row"><button class="btn" id="back">Retour</button><button class="btn primary" id="ok">Confirmer</button></div>`);
+    $('#back').onclick = step0;
+    $('#ok').onclick = () => {
+      closeSheet();
+      const done = place(id, n);
+      if (done) { render(); celebrate(b); } else { render(); toast(`${n} ${plural(n, 'pièce posée', 'pièces posées')}.`, 'Annuler', undo); }
+    };
+  };
+  step0();
+}
+function openPick(zi) {
+  const z = ZONES[zi], c = curBook(zi);
+  openSheet(`<h2>${z.name}</h2><p class="sub">Choisis le livre que tu lis en ce moment.</p><ul class="pl">${z.books.map(b => {
+    const r = D.read[b.id], done = r === b.ch;
+    return `<li><button data-choose="${b.id}" ${done ? 'disabled' : ''}><span class="nm">${b.name}${c && c.id === b.id ? ' (en cours)' : ''}</span>
+      <span class="pc">${done ? 'Terminé' : `${r} sur ${b.ch}`}</span><div class="bar"><i style="width:${r / b.ch * 100}%;background:var(--z${zi})"></i></div></button></li>`;
+  }).join('')}</ul>`);
+}
+
+function celebrate(b) {
+  const d = Math.min(14, 1400 / b.ch), end = (b.ch * d + 400) / 1000;
+  const zoneDone = ZONES[b.zi].books.every(x => D.read[x.id] === x.ch);
+  const el = $('#celebrate');
+  el.style.setProperty('--d', d + 'ms'); el.style.setProperty('--end', end + 's');
+  el.innerHTML = `<div style="--d:${d}ms">${spiral(b, 0, '', {anim: true})}</div>
+    <h2 class="after">${b.name} est terminé</h2>
+    <p class="muted after">${b.ch} ${plural(b.ch, 'pièce posée', 'pièces posées')}${zoneDone ? `. La zone ${ZONES[b.zi].name} est complète.` : '.'}</p>
+    <div class="row after" style="width:100%;max-width:360px;margin-top:14px"><button class="btn" id="cc">Continuer</button><button class="btn primary" id="cf">Voir la fresque</button></div>`;
+  el.hidden = false; $('#cf').focus({preventScroll: true});
+  $('#cc').onclick = () => { el.hidden = true; };
+  $('#cf').onclick = () => { el.hidden = true; view = 'fresque'; sel = b.id; render(); window.scrollTo(0, 0); };
+}
+
+/* Toast */
+let tt;
+function toast(msg, label, fn) {
+  const t = $('#toast'); t.innerHTML = `<span></span>${label ? `<button>${label}</button>` : ''}`;
+  t.firstChild.textContent = msg; t.hidden = false;
+  if (label) t.querySelector('button').onclick = () => { t.hidden = true; fn(); };
+  clearTimeout(tt); tt = setTimeout(() => { t.hidden = true; }, label ? 7000 : 3000);
+}
+
+/* ---------- Events ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-tab],[data-place],[data-pick],[data-choose],[data-undo],[data-theme],[data-grace],[data-export],[data-import],[data-reset],[data-b]');
+  if (!t) { if (e.target.id === 'overlay') closeSheet(); return; }
+  const ds = t.dataset;
+  if (ds.tab) { view = ds.tab; render(); window.scrollTo(0, 0); }
+  else if (ds.place) openPlace(ds.place);
+  else if (ds.pick !== undefined) openPick(+ds.pick);
+  else if (ds.choose) { S.current[BY[ds.choose].zi] = ds.choose; save(); render(); openPlace(ds.choose); }
+  else if ('undo' in ds) undo();
+  else if (ds.theme) { S.settings.theme = ds.theme; save(); applyTheme(); render(); }
+  else if ('grace' in ds) { S.settings.grace = !S.settings.grace; save(); derive(); render(); }
+  else if ('export' in ds) exportData();
+  else if ('import' in ds) $('#file').click();
+  else if ('reset' in ds) { if (confirm('Effacer toute ta progression sur cet appareil ? Cette action est définitive.')) { S = defaults(); save(); derive(); applyTheme(); render(); toast('Progression effacée.'); } }
+  else if (ds.b) { sel = ds.b; render(); }
+});
+document.addEventListener('change', e => {
+  if (e.target.id !== 'file' || !e.target.files[0]) return;
+  const f = e.target.files[0], rd = new FileReader();
+  rd.onload = () => importData(String(rd.result)); rd.readAsText(f); e.target.value = '';
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSheet(); $('#celebrate').hidden = true; } });
+
+/* ---------- Boot ---------- */
+applyTheme(); derive(); render();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+window.__bp = {S: () => S, D: () => D, place, undo};
+})();
+</script>
+</body>
+</html>
